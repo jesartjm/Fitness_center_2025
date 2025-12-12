@@ -4,4 +4,4 @@ matplotlib
 seaborn
 plotly
 openpyxl
-
+supabase==2.3.4
