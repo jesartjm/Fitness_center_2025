@@ -96,22 +96,19 @@ def radar_chart(labels, values):
 
 
 def gauge_chart(value, title="KPI"):
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number",
-            value=value,
-            title={"text": title},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "#ffe04c"},
-                "bgcolor": "#555",
-                "borderwidth": 2,
-                "bordercolor": "#aaa",
-            },
-        )
-    )
-    fig.update_layout(paper_bgcolor="#111", font_color="#ffe04c")
-    st.plotly_chart(fig, use_container_width=True)
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(6, 1.0))
+    ax.barh([0], [100], color="#333333", height=0.28)
+    ax.barh([0], [value], color="#ffe04c", height=0.28)
+    ax.text(value, 0, f" {value}%", va="center", ha="left", fontsize=14, color="white", fontweight="bold")
+    ax.text(0, 0.55, title, va="center", ha="left", fontsize=14, color="white", fontweight="bold")
+    ax.set_xlim(0, 100)
+    ax.set_yticks([])
+    ax.set_xticks([])
+    fig.patch.set_facecolor('#0e0e0e')
+    ax.set_facecolor('#0e0e0e')
+    plt.box(False)
+    st.pyplot(fig)(fig, use_container_width=True)
 
 # --- UI HEADER ---
 st.markdown("<h1 style='color:#ffe04c;'>🏋️ Fitness Center – Smart Training</h1>", unsafe_allow_html=True)
@@ -187,4 +184,5 @@ elif section == "Recomendaciones":
             micro_card("Rutina ideal", "Circuitos + cardio estable", "🔥")
         else:
             micro_card("Rutina ideal", "Funcional + intervalos", "🏃")
+
 
