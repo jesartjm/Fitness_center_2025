@@ -109,7 +109,7 @@ def gauge_chart(value, title="KPI"):
     fig.patch.set_facecolor('#0e0e0e')
     ax.set_facecolor('#0e0e0e')
     plt.box(False)
-    st.pyplot(fig, use_container_width=True)(fig, use_container_width=True)
+    st.pyplot(fig, use_container_width=True)
 
 # --- UI HEADER ---
 st.markdown("<h1 style='color:#ffe04c;'>🏋️ Fitness Center – Smart Training</h1>", unsafe_allow_html=True)
@@ -185,6 +185,7 @@ elif section == "Recomendaciones":
             micro_card("Rutina ideal", "Circuitos + cardio estable", "🔥")
         else:
             micro_card("Rutina ideal", "Funcional + intervalos", "🏃")
+
 
 
 
