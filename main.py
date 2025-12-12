@@ -1,4 +1,9 @@
 import streamlit as st
+import math
+from math import pi
+import pandas as pd
+import plotly.graph_objects as go
+
 # --- SIDEBAR NAV ---
 section = st.sidebar.radio(
 "Menú",
