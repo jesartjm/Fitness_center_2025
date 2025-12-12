@@ -3,6 +3,8 @@ import math
 from math import pi
 import pandas as pd
 import plotly.graph_objects as go
+from components.db import get_user_profile, get_user_visits, get_classes, reserve_class_atomic
+from components.recommend import suggest_routine
 
 # --- STREAMLIT THEME CONFIG ---
 st.set_page_config(
@@ -121,7 +123,21 @@ section = st.sidebar.radio(
 )
 
 # --- SECTIONS ---
-if section == "Ocupación en Tiempo Real":
+if section == "Perfil":
+    user_id = "00000000-0000-0000-0000-000000000000"  # <-- luego lo harás dinámico
+    perfil = get_user_profile(user_id)
+    visitas = get_user_visits(user_id)
+    
+    if perfil:
+        st.subheader("👤 Perfil del Usuario")
+        st.write(f"**Nombre:** {perfil['nombre']}")
+        st.write(f"**Email:** {perfil['email']}")
+        st.write(f"**Membresía:** {perfil['membresia']}")
+        st.write(f"**Objetivo:** {perfil['objetivo']}")
+    
+        st.metric("Visitas Totales", len(visitas))
+
+elif section == "Ocupación en Tiempo Real":
     st.header("📊 Ocupación en Tiempo Real")
     data = get_fake_occupancy()
     cols = st.columns(2)
@@ -155,36 +171,34 @@ elif section == "Guía Técnica":
         micro_card("Sugerencia técnica", f"Posible error en {movimiento}. Ajusta postura.", "⚠️")
 
 elif section == "Clases":
-    st.header("📅 Reservas de Clases")
-    clases = [
-        {"nombre": "HIIT", "hora": "18:00", "capacidad": 20, "ocupados": 17},
-        {"nombre": "Yoga", "hora": "19:00", "capacidad": 25, "ocupados": 25},
-        {"nombre": "Spinning", "hora": "20:00", "capacidad": 15, "ocupados": 12},
-    ]
-
+    st.subheader("📅 Clases Disponibles")
+    
+    clases = get_classes()
+    
     for c in clases:
-        percent = int((c["ocupados"] / c["capacidad"]) * 100)
-        micro_card(f"{c['nombre']} – {c['hora']}", "Disponibilidad:", "📌")
-        gauge_chart(percent, title=c["nombre"])
-        if percent < 100:
-            st.button(f"Reservar {c['nombre']}")
-        else:
-            st.error("Clase llena")
-            st.button(f"Lista de espera — {c['nombre']}")
+        st.markdown(f"### {c['nombre']} — {c['horario']}")
+        st.progress(c["capacidad_actual"] / c["capacidad_max"])
+    
+        if st.button(f"Reservar {c['id']}"):
+            resultado = reserve_class_atomic(user_id, c["id"])
+            st.success(resultado)
 
 elif section == "Recomendaciones":
-    st.header("🤖 Recomendaciones Personalizadas")
-    objetivo = st.selectbox("Objetivo", ["Perder grasa", "Ganar músculo", "Mejorar resistencia"])
-    frecuencia = st.slider("Entrenos por semana", 1, 7, 3)
-
-    if st.button("Generar recomendaciones"):
-        micro_card("Horario óptimo", "14:00–17:00 – Menor ocupación", "⏱️")
-        if objetivo == "Ganar músculo":
-            micro_card("Rutina ideal", "Push/Pull/Legs con sobrecarga progresiva", "💪")
-        elif objetivo == "Perder grasa":
-            micro_card("Rutina ideal", "Circuitos + cardio estable", "🔥")
-        else:
-            micro_card("Rutina ideal", "Funcional + intervalos", "🏃")
+    st.subheader("🤖 Entrenamiento Sugerido")
+    
+    rutina = suggest_routine(
+        goal=perfil["objetivo"],
+        visits_last_30=len(visitas),
+        fav_hours=[18,19,20],
+        occupancy=55
+    )
+    
+    st.write(f"🔥 Recomendación principal: **{rutina['top1']}**")
+    st.write(f"⭐ Alternativa: **{rutina['top2']}**")
+    
+    st.write("### Detalles sugeridos:")
+    for d in rutina["detalles"]:
+        st.write("- " + d)
 
 
 
