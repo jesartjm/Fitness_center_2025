@@ -20,12 +20,13 @@ st.markdown(
         --primary-color: #ffe04c;
         --background-color: #0e0e0e;
         --card-bg: #1b1b1b;
-        --text-color: #e6e6e6;
+        --text-color: #ffffff;
     }
     body {background-color: var(--background-color); color: var(--text-color);}
 
     /* --- MICROINTERACCIONES --- */
     .micro-card {
+        margin-bottom: 18px;
         background: linear-gradient(145deg, #1b1b1b, #0f0f0f);
         padding: 22px;
         border-radius: 20px;
@@ -97,7 +98,7 @@ def radar_chart(labels, values):
 
 def gauge_chart(value, title="KPI"):
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(figsize=(6, 1.0))
+    fig, ax = plt.subplots(figsize=(4.5, 0.6))
     ax.barh([0], [100], color="#333333", height=0.28)
     ax.barh([0], [value], color="#ffe04c", height=0.28)
     ax.text(value, 0, f" {value}%", va="center", ha="left", fontsize=14, color="white", fontweight="bold")
@@ -108,7 +109,7 @@ def gauge_chart(value, title="KPI"):
     fig.patch.set_facecolor('#0e0e0e')
     ax.set_facecolor('#0e0e0e')
     plt.box(False)
-    st.pyplot(fig)(fig, use_container_width=True)
+    st.pyplot(fig, use_container_width=True)(fig, use_container_width=True)
 
 # --- UI HEADER ---
 st.markdown("<h1 style='color:#ffe04c;'>🏋️ Fitness Center – Smart Training</h1>", unsafe_allow_html=True)
@@ -184,5 +185,6 @@ elif section == "Recomendaciones":
             micro_card("Rutina ideal", "Circuitos + cardio estable", "🔥")
         else:
             micro_card("Rutina ideal", "Funcional + intervalos", "🏃")
+
 
 
