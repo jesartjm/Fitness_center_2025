@@ -1,29 +1,55 @@
-import supabase
-from datetime import datetime
 import os
+from supabase import create_client, Client
+from datetime import datetime
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-sb = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def get_user_profile(user_id):
-    res = sb.table("users").select("*").eq("id", user_id).execute()
-    if res.data:
-        return res.data[0]
-    return None
+# -------------------------
+# 🔹 Obtener perfil de usuario
+# -------------------------
+def get_user_profile(user_id: str):
+    data = (
+        supabase.table("usuarios")
+        .select("*")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+    return data.data
 
-def get_visit_stats(user_id):
-    res = sb.table("visits").select("id").eq("user_id", user_id).execute()
-    return len(res.data)
+# -------------------------
+# 🔹 Obtener historial de visitas
+# -------------------------
+def get_user_visits(user_id: str):
+    data = (
+        supabase.table("visitas")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("fecha", desc=True)
+        .execute()
+    )
+    return data.data
 
+# -------------------------
+# 🔹 Obtener clases
+# -------------------------
 def get_classes():
-    return sb.table("classes").select("*").execute().data
+    return supabase.table("clases").select("*").execute().data
 
-def reserve_class_atomic(user_id, class_id):
-    res = sb.rpc(
+# -------------------------
+# 🔹 Reservar una clase (llama el RPC)
+# -------------------------
+def reserve_class_atomic(user_id: str, class_id: str):
+    result = supabase.rpc(
         "reserve_class_atomic",
-        {"p_user_id": user_id, "p_class_id": class_id}
+        {
+            "p_user_id": user_id,
+            "p_class_id": class_id,
+        },
     ).execute()
-    return res.data
+
+    return result.data
 
