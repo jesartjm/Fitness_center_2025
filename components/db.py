@@ -1,15 +1,19 @@
-import os
+import streamlit as st
 from supabase import create_client, Client
 from datetime import datetime
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# ======================================================
+# 🔐 LEER SECRETS DESDE STREAMLIT
+# ======================================================
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
+# Crear cliente
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# -------------------------
+# ======================================================
 # 🔹 Obtener perfil de usuario
-# -------------------------
+# ======================================================
 def get_user_profile(user_id: str):
     data = (
         supabase.table("usuarios")
@@ -20,9 +24,9 @@ def get_user_profile(user_id: str):
     )
     return data.data
 
-# -------------------------
+# ======================================================
 # 🔹 Obtener historial de visitas
-# -------------------------
+# ======================================================
 def get_user_visits(user_id: str):
     data = (
         supabase.table("visitas")
@@ -33,23 +37,14 @@ def get_user_visits(user_id: str):
     )
     return data.data
 
-# -------------------------
-# 🔹 Obtener clases
-# -------------------------
+# ======================================================
+# 🔹 Obtener clases disponibles
+# ======================================================
 def get_classes():
     return supabase.table("clases").select("*").execute().data
 
-# -------------------------
-# 🔹 Reservar una clase (llama el RPC)
-# -------------------------
-def reserve_class_atomic(user_id: str, class_id: str):
-    result = supabase.rpc(
-        "reserve_class_atomic",
-        {
-            "p_user_id": user_id,
-            "p_class_id": class_id,
-        },
-    ).execute()
+# ======================================================
+# 🔹 Reservar clase (Transaction / RPC)
+#
 
-    return result.data
 
