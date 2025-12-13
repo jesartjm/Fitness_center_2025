@@ -89,6 +89,63 @@ def mini_gauge(value, key):
     )
     st.plotly_chart(fig, use_container_width=True, key=key)
 
+def generar_rutina(objetivo, nivel, dias):
+    rutinas = {
+        "Ganar músculo": {
+            "Principiante": [
+                ["Press pecho", "Sentadilla", "Plancha"],
+                ["Remo con barra", "Peso muerto", "Crunch"],
+            ],
+            "Intermedio": [
+                ["Press banca", "Sentadilla", "Dominadas"],
+                ["Peso muerto", "Press militar", "Core"],
+            ],
+            "Avanzado": [
+                ["Press banca", "Sentadilla frontal", "Dominadas lastradas"],
+                ["Peso muerto", "Push press", "Ab wheel"],
+            ],
+        },
+        "Perder grasa": {
+            "Principiante": [
+                ["Caminata inclinada", "Sentadilla", "Plancha"],
+                ["Bici estática", "Zancadas", "Crunch"],
+            ],
+            "Intermedio": [
+                ["HIIT", "Burpees", "Mountain climbers"],
+                ["Cuerda", "Kettlebell swing", "Core"],
+            ],
+            "Avanzado": [
+                ["HIIT avanzado", "Saltos pliométricos", "Core"],
+                ["Sprints", "Circuito funcional", "Abdominales"],
+            ],
+        },
+        "general": {
+            "Principiante": [
+                ["Press máquina", "Sentadilla goblet", "Plancha"],
+                ["Remo polea", "Peso muerto ligero", "Crunch"],
+            ],
+            "Intermedio": [
+                ["Press banca", "Sentadilla", "Dominadas"],
+                ["Peso muerto", "Press hombro", "Core"],
+            ],
+            "Avanzado": [
+                ["Full body pesado", "Sentadilla", "Dominadas"],
+                ["Fuerza + cardio", "Circuito funcional", "Core"],
+            ],
+        },
+    }
+
+    # Fallbacks seguros
+    objetivo = objetivo if objetivo in rutinas else "general"
+    nivel = nivel if nivel in rutinas[objetivo] else "Principiante"
+
+    bloques = rutinas[objetivo][nivel]
+    rutina_final = {}
+
+    for i, dia in enumerate(dias):
+        rutina_final[dia] = bloques[i % len(bloques)]
+
+    return rutina_final
 # =====================================
 # HEADER
 # =====================================
