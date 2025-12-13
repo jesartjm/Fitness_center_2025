@@ -6,161 +6,209 @@ from components.db import (
     get_classes,
     reserve_class_atomic,
 )
-from components.recommend import suggest_routine
 
+# ================================
+# CONFIG GENERAL
+# ================================
 st.set_page_config(
-    page_title="Fitness Center",
+    page_title="Fitness Center App",
+    page_icon="🏋️",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
-# ======================
-# 🎨 ESTILOS
-# ======================
-st.markdown("""
-<style>
-html, body, [class*="css"] {
-    background-color: #0e0e0e;
-    color: white;
-}
+# ================================
+# THEME + CSS
+# ================================
+st.markdown(
+    """
+    <style>
+    body { background-color: #0e0e0e; color: white; }
 
-.sidebar .sidebar-content {
-    background-color: #111;
-}
+    h1, h2, h3, h4, h5 { color: #ffe04c; }
 
-.card {
-    background-color: #151515;
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 18px;
-    border: 1px solid #222;
-}
+    .card {
+        background: #151515;
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 18px;
+        border: 1px solid #222;
+        transition: 0.25s ease;
+    }
 
-.kpi {
-    font-size: 32px;
-    font-weight: bold;
-    color: #ffe04c;
-}
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0 20px rgba(255,224,76,0.25);
+    }
 
-.small {
-    color: #aaa;
-}
+    .kpi {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffe04c;
+    }
 
-button {
-    background-color: #ffe04c !important;
-    color: black !important;
-    border-radius: 8px !important;
-    font-weight: bold;
-}
-</style>
-""", unsafe_allow_html=True)
+    .small { color: #aaa; font-size: 13px; }
 
-def mini_gauge(percent, label):
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=percent,
-        title={"text": label, "font": {"color": "white"}},
-        gauge={
-            "axis": {"range": [0, 100]},
-            "bar": {"color": "#ffe04c"},
-            "bgcolor": "#1a1a1a",
-            "borderwidth": 0,
-        },
-        number={"font": {"color": "white"}}
-    ))
+    [data-testid="stSidebar"] {
+        background: #111;
+        border-right: 1px solid #222;
+        animation: slideIn 0.4s ease;
+    }
 
+    @keyframes slideIn {
+        from { transform: translateX(-200px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ================================
+# USUARIO SIMULADO
+# ================================
+USER_ID = "00000000-0000-0000-0000-000000000001"
+
+perfil = get_user_profile(USER_ID)
+
+if not perfil:
+    st.error("Usuario no encontrado en Supabase")
+    st.stop()
+
+visitas = get_user_visits(USER_ID)
+clases = get_classes()
+
+# ================================
+# COMPONENTES
+# ================================
+
+def card(html):
+    st.markdown(f"<div class='card'>{html}</div>", unsafe_allow_html=True)
+
+
+def mini_gauge(value):
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=value,
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#ffe04c"},
+                "bgcolor": "#222",
+                "borderwidth": 0,
+            },
+        )
+    )
     fig.update_layout(
         height=180,
-        margin=dict(l=10, r=10, t=40, b=10),
+        margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="#0e0e0e",
         font_color="white",
     )
     st.plotly_chart(fig, use_container_width=True)
 
-st.sidebar.title("🏋️ Fitness Center")
-menu = st.sidebar.radio(
+# ================================
+# HEADER
+# ================================
+st.markdown("<h1>🏋️ Fitness Center – Smart Gym</h1>", unsafe_allow_html=True)
+
+# ================================
+# MENU
+# ================================
+section = st.sidebar.radio(
     "Menú",
-    ["🏠 Dashboard", "📊 Ocupación", "📅 Clases", "👤 Perfil"]
+    [
+        "Perfil",
+        "Ocupación",
+        "Clases",
+        "Recomendaciones",
+    ],
 )
 
-USER_ID = "00000000-0000-0000-0000-000000000001"
-perfil = get_user_profile(USER_ID)
-visitas = get_user_visits(USER_ID)
+# ================================
+# PERFIL
+# ================================
+if section == "Perfil":
+    st.subheader("👤 Perfil del Usuario")
 
-if menu == "🏠 Dashboard":
-    st.title("🏠 Dashboard")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        card(f"<div class='kpi'>{perfil.get('nombre','-')}</div><div class='small'>Nombre</div>")
+    with c2:
+        card(f"<div class='kpi'>{perfil.get('membresia','No asignada')}</div><div class='small'>Membresía</div>")
+    with c3:
+        card(f"<div class='kpi'>{len(visitas)}</div><div class='small'>Visitas acumuladas</div>")
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown('<div class="card"><div class="kpi">'
-                    f'{len(visitas)}</div><div class="small">Visitas</div></div>',
-                    unsafe_allow_html=True)
-
-    with col2:
-        st.markdown('<div class="card"><div class="kpi">'
-                    f'{perfil.get("membresia", "No asignada")}</div><div class="small">Membresía</div></div>',
-                    unsafe_allow_html=True)
-
-    with col3:
-        st.markdown('<div class="card"><div class="kpi">'
-                    f'{perfil["objetivo"]}</div><div class="small">Objetivo</div></div>',
-                    unsafe_allow_html=True)
-
-    st.subheader("🤖 Entrenamiento sugerido")
-    routine = suggest_routine(
-        goal=perfil["objetivo"],
-        visits_count=len(visitas),
-        preferred_time="Tarde",
-        occupancy=65,
-    )
-
-    for r in routine:
-        st.markdown(f"- {r}")
-
-elif menu == "📊 Ocupación":
-    st.title("📊 Ocupación actual")
+# ================================
+# OCUPACIÓN
+# ================================
+elif section == "Ocupación":
+    st.subheader("📊 Ocupación del Gimnasio")
 
     zonas = {
-        "Cardio": 72,
-        "Pesas": 85,
-        "Funcional": 40,
+        "Pesas": 65,
+        "Cardio": 40,
+        "Funcional": 25,
     }
 
     cols = st.columns(3)
-    for col, (zona, percent) in zip(cols, zonas.items()):
-        with col:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            mini_gauge(percent, zona)
-            st.markdown('</div>', unsafe_allow_html=True)
+    for i, (zona, val) in enumerate(zonas.items()):
+        with cols[i]:
+            card(f"<div class='kpi'>{zona}</div><div class='small'>Ocupación</div>")
+            mini_gauge(val)
 
-elif menu == "📅 Clases":
-    st.title("📅 Clases disponibles")
-
-    clases = get_classes()
+# ================================
+# CLASES
+# ================================
+elif section == "Clases":
+    st.subheader("📅 Reservar clases")
 
     for c in clases:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader(c["nombre"])
-        st.write(f"🕒 {c['horario']}")
-        st.write(f"👥 {c['capacidad_actual']} / {c['capacidad_max']}")
+        percent = int((c["capacidad_actual"] / c["capacidad_max"]) * 100)
 
-        if st.button(f"Reservar {c['nombre']}", key=c["id"]):
-            result = reserve_class_atomic(USER_ID, c["id"])
-            st.success(result)
+        card(
+            f"""
+            <div class='kpi'>{c['nombre']}</div>
+            <div class='small'>Horario: {c['horario']}</div>
+            <div class='small'>Ocupación: {c['capacidad_actual']} / {c['capacidad_max']}</div>
+            """
+        )
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        mini_gauge(percent)
 
-elif menu == "👤 Perfil":
-    st.title("👤 Mi perfil")
+        if percent < 100:
+            if st.button(f"Reservar {c['nombre']}", key=c["id"]):
+                msg = reserve_class_atomic(USER_ID, c["id"])
+                st.success(msg)
+                st.experimental_rerun()
+        else:
+            st.error("Clase llena")
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.write(f"**Nombre:** {perfil['nombre']}")
-    st.write(f"**Email:** {perfil['email']}")
-    st.write(f"**Membresía:** {perfil['membresia']}")
-    st.write(f"**Objetivo:** {perfil['objetivo']}")
-    st.write(f"**Visitas acumuladas:** {len(visitas)}")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ================================
+# RECOMENDACIONES IA
+# ================================
+elif section == "Recomendaciones":
+    st.subheader("🤖 Entrenamiento sugerido")
+
+    objetivo = perfil.get("objetivo", "general")
+    frecuencia = st.slider("Sesiones por semana", 1, 6, 3)
+
+    if st.button("Generar rutina"):
+        if objetivo == "fuerza":
+            rutina = "Push / Pull / Legs con sobrecarga progresiva"
+        elif objetivo == "resistencia":
+            rutina = "Cardio intervalos + funcional"
+        else:
+            rutina = "Full body balanceado"
+
+        card(
+            f"""
+            <div class='kpi'>Rutina recomendada</div>
+            <div>{rutina}</div>
+            <div class='small'>Basado en objetivo, visitas y ocupación</div>
+            """
+        )
+
 
 
 
