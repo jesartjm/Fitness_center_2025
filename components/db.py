@@ -2,6 +2,9 @@ import streamlit as st
 from supabase import create_client, Client
 from datetime import datetime
 
+print("URL:", SUPABASE_URL)
+print("KEY:", SUPABASE_KEY[:8], "... cargada")
+
 # ======================================================
 # 🔐 LEER SECRETS DESDE STREAMLIT
 # ======================================================
