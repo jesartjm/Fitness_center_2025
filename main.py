@@ -241,7 +241,7 @@ elif section == "Entrenamiento IA":
             rutina_final[dia] = bloques[i % len(bloques)]
     
         return rutina_final
-    )
+    
 
 
 
