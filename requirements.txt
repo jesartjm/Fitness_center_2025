@@ -5,8 +5,7 @@ plotly
 openpyxl
 
 # Backend real
-supabase==2.4.3
-httpx==0.24.1
+supabase==1.0.3
 requests
 
 # UI Opcional
