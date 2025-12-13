@@ -184,36 +184,64 @@ elif section == "Entrenamiento IA":
         "Días disponibles",
         ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
     )
-
     def generar_rutina(objetivo, nivel, dias):
-        base = {
-            "fuerza": {
+        rutinas = {
+            "Ganar músculo": {
                 "Principiante": [
                     ["Press pecho", "Sentadilla", "Plancha"],
-                    ["Remo", "Peso muerto", "Abdominales"],
+                    ["Remo con barra", "Peso muerto", "Crunch"],
                 ],
                 "Intermedio": [
                     ["Press banca", "Sentadilla", "Dominadas"],
                     ["Peso muerto", "Press militar", "Core"],
                 ],
-            }
+                "Avanzado": [
+                    ["Press banca", "Sentadilla frontal", "Dominadas lastradas"],
+                    ["Peso muerto", "Push press", "Ab wheel"],
+                ],
+            },
+            "Perder grasa": {
+                "Principiante": [
+                    ["Caminata inclinada", "Sentadilla", "Plancha"],
+                    ["Bici estática", "Zancadas", "Crunch"],
+                ],
+                "Intermedio": [
+                    ["HIIT", "Burpees", "Mountain climbers"],
+                    ["Cuerda", "Kettlebell swing", "Core"],
+                ],
+                "Avanzado": [
+                    ["HIIT avanzado", "Saltos pliométricos", "Core"],
+                    ["Sprints", "Circuito funcional", "Abdominales"],
+                ],
+            },
+            "general": {
+                "Principiante": [
+                    ["Press máquina", "Sentadilla goblet", "Plancha"],
+                    ["Remo polea", "Peso muerto ligero", "Crunch"],
+                ],
+                "Intermedio": [
+                    ["Press banca", "Sentadilla", "Dominadas"],
+                    ["Peso muerto", "Press hombro", "Core"],
+                ],
+                "Avanzado": [
+                    ["Full body pesado", "Sentadilla", "Dominadas"],
+                    ["Fuerza + cardio", "Circuito funcional", "Core"],
+                ],
+            },
         }
-
-        rutina = {}
+    
+        # Fallbacks seguros
+        objetivo = objetivo if objetivo in rutinas else "general"
+        nivel = nivel if nivel in rutinas[objetivo] else "Principiante"
+    
+        rutina_final = {}
+        bloques = rutinas[objetivo][nivel]
+    
         for i, dia in enumerate(dias):
-            rutina[dia] = base["fuerza"][nivel][i % 2]
-        return rutina
-
-    if st.button("Generar rutina"):
-        rutina = generar_rutina(perfil["objetivo"], nivel, dias)
-
-        for dia, ejercicios in rutina.items():
-            card(
-                f"<div class='kpi'>{dia}</div>" +
-                "<ul>" +
-                "".join([f"<li>{e}</li>" for e in ejercicios]) +
-                "</ul>"
-            )
+            rutina_final[dia] = bloques[i % len(bloques)]
+    
+        return rutina_final
+    )
 
 
 
