@@ -1,204 +1,167 @@
 import streamlit as st
-import math
-from math import pi
-import pandas as pd
 import plotly.graph_objects as go
-from components.db import get_user_profile, get_user_visits, get_classes, reserve_class_atomic
+from components.db import (
+    get_user_profile,
+    get_user_visits,
+    get_classes,
+    reserve_class_atomic,
+)
 from components.recommend import suggest_routine
 
-# --- STREAMLIT THEME CONFIG ---
 st.set_page_config(
-    page_title="Fitness Center App",
+    page_title="Fitness Center",
     layout="wide",
-    page_icon="🏋️",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# --- BUILT-IN THEME (Dark + Yellow Highlights) ---
-st.markdown(
-    """
-    <style>
-    :root {
-        --primary-color: #ffe04c;
-        --background-color: #0e0e0e;
-        --card-bg: #1b1b1b;
-        --text-color: #ffffff;
-    }
-    body {background-color: var(--background-color); color: var(--text-color);}
+# ======================
+# 🎨 ESTILOS
+# ======================
+st.markdown("""
+<style>
+html, body, [class*="css"] {
+    background-color: #0e0e0e;
+    color: white;
+}
 
-    /* --- MICROINTERACCIONES --- */
-    .micro-card {
-        margin-bottom: 18px;
-        background: linear-gradient(145deg, #1b1b1b, #0f0f0f);
-        padding: 22px;
-        border-radius: 20px;
-        border: 1px solid #242424;
-        transition: all 0.25s ease;
-        box-shadow: 0px 0px 15px rgba(255, 224, 76, 0.06);
-    }
-    .micro-card:hover {
-        transform: translateY(-6px) scale(1.02);
-        box-shadow: 0px 0px 25px rgba(255, 224, 76, 0.25);
-    }
+.sidebar .sidebar-content {
+    background-color: #111;
+}
 
-    /* Botones animados */
-    .stButton>button {
-        background-color: var(--primary-color);
-        color: black;
-        font-weight: 600;
-        border-radius: 12px;
-        padding: 0.6rem 1.2rem;
-        border: none;
-        transition: 0.2s ease;
-    }
-    .stButton>button:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 0px 12px rgba(255, 224, 76, 0.75);
-    }
+.card {
+    background-color: #151515;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid #222;
+}
 
-    /* Sidebar Slide-In */
-    [data-testid="stSidebar"] {
-        background-color: #111;
-        border-right: 1px solid #333;
-        animation: slideIn 0.5s ease-out;
-    }
-    @keyframes slideIn {
-        from {opacity: 0; transform: translateX(-200px);}    
-        to {opacity: 1; transform: translateX(0);} 
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+.kpi {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffe04c;
+}
 
-# --- SAMPLE DATA ---
-def get_fake_occupancy():
-    return {"Zona de Pesas": 67, "Cardio": 42, "Funcional": 29, "Estudios": 18}
+.small {
+    color: #aaa;
+}
 
-# --- COMPONENTS ---
-def micro_card(title, body, icon="🔥"):
-    st.markdown(f"""
-    <div class='micro-card'>
-        <div style='font-size:40px;color:#ffe04c'>{icon}</div>
-        <h3>{title}</h3>
-        <p>{body}</p>
-    </div>
-    """, unsafe_allow_html=True)
+button {
+    background-color: #ffe04c !important;
+    color: black !important;
+    border-radius: 8px !important;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
 
+def mini_gauge(percent, label):
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=percent,
+        title={"text": label, "font": {"color": "white"}},
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": "#ffe04c"},
+            "bgcolor": "#1a1a1a",
+            "borderwidth": 0,
+        },
+        number={"font": {"color": "white"}}
+    ))
 
-def radar_chart(labels, values):
-    fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(r=values, theta=labels, fill="toself"))
     fig.update_layout(
-        polar=dict(bgcolor="#0e0e0e", radialaxis=dict(visible=True, range=[0, 100])),
-        showlegend=False,
+        height=180,
+        margin=dict(l=10, r=10, t=40, b=10),
         paper_bgcolor="#0e0e0e",
-        font_color="#ffe04c",
+        font_color="white",
     )
     st.plotly_chart(fig, use_container_width=True)
 
-
-def gauge_chart(value, title="KPI"):
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(figsize=(4.5, 0.6))
-    ax.barh([0], [100], color="#333333", height=0.28)
-    ax.barh([0], [value], color="#ffe04c", height=0.28)
-    ax.text(value, 0, f" {value}%", va="center", ha="left", fontsize=14, color="white", fontweight="bold")
-    ax.text(0, 0.55, title, va="center", ha="left", fontsize=14, color="white", fontweight="bold")
-    ax.set_xlim(0, 100)
-    ax.set_yticks([])
-    ax.set_xticks([])
-    fig.patch.set_facecolor('#0e0e0e')
-    ax.set_facecolor('#0e0e0e')
-    plt.box(False)
-    st.pyplot(fig, use_container_width=True)
-
-# --- UI HEADER ---
-st.markdown("<h1 style='color:#ffe04c;'>🏋️ Fitness Center – Smart Training</h1>", unsafe_allow_html=True)
-
-# --- SIDEBAR NAV ---
-section = st.sidebar.radio(
+st.sidebar.title("🏋️ Fitness Center")
+menu = st.sidebar.radio(
     "Menú",
-    ["Ocupación en Tiempo Real", "Dashboard Avanzado", "Guía Técnica", "Clases", "Recomendaciones"],
+    ["🏠 Dashboard", "📊 Ocupación", "📅 Clases", "👤 Perfil"]
 )
 
-# --- SECTIONS ---
-if section == "Perfil":
-    user_id = "00000000-0000-0000-0000-000000000000"  # <-- luego lo harás dinámico
-    perfil = get_user_profile(user_id)
-    visitas = get_user_visits(user_id)
-    
-    if perfil:
-        st.subheader("👤 Perfil del Usuario")
-        st.write(f"**Nombre:** {perfil['nombre']}")
-        st.write(f"**Email:** {perfil['email']}")
-        st.write(f"**Membresía:** {perfil['membresia']}")
-        st.write(f"**Objetivo:** {perfil['objetivo']}")
-    
-        st.metric("Visitas Totales", len(visitas))
+USER_ID = "00000000-0000-0000-0000-000000000001"
+perfil = get_user_profile(USER_ID)
+visitas = get_user_visits(USER_ID)
 
-elif section == "Ocupación en Tiempo Real":
-    st.header("📊 Ocupación en Tiempo Real")
-    data = get_fake_occupancy()
-    cols = st.columns(2)
-    i = 0
-    for zona, percent in data.items():
-        with cols[i % 2]:
-            micro_card(zona, f"Ocupación actual: {percent}%", "📍")
-            gauge_chart(percent, title=zona)
-        i += 1
-
-elif section == "Dashboard Avanzado":
-    st.header("📈 Dashboard Avanzado – KPIs del Gimnasio")
+if menu == "🏠 Dashboard":
+    st.title("🏠 Dashboard")
 
     col1, col2, col3 = st.columns(3)
+
     with col1:
-        micro_card("Asistencia Hoy", "542 miembros", "👥")
+        st.markdown('<div class="card"><div class="kpi">'
+                    f'{len(visitas)}</div><div class="small">Visitas</div></div>',
+                    unsafe_allow_html=True)
+
     with col2:
-        micro_card("Promedio Ocupación", "58%", "📊")
+        st.markdown('<div class="card"><div class="kpi">'
+                    f'{perfil["membresia"]}</div><div class="small">Membresía</div></div>',
+                    unsafe_allow_html=True)
+
     with col3:
-        micro_card("Clases Activas", "12 clases en curso", "🔥")
+        st.markdown('<div class="card"><div class="kpi">'
+                    f'{perfil["objetivo"]}</div><div class="small">Objetivo</div></div>',
+                    unsafe_allow_html=True)
 
-    st.subheader("Radar Chart – Perfil del Gimnasio")
-    labels = ["Fuerza", "Cardio", "Movilidad", "Funcional", "HIIT"]
-    values = [78, 63, 55, 82, 90]
-    radar_chart(labels, values)
-
-elif section == "Guía Técnica":
-    st.header("🦾 Guía Técnica Inteligente")
-    movimiento = st.selectbox("Ejercicio", ["Sentadilla", "Peso muerto", "Press banca", "Remo"])
-    if st.button("Mostrar sugerencia técnica"):
-        micro_card("Sugerencia técnica", f"Posible error en {movimiento}. Ajusta postura.", "⚠️")
-
-elif section == "Clases":
-    st.subheader("📅 Clases Disponibles")
-    
-    clases = get_classes()
-    
-    for c in clases:
-        st.markdown(f"### {c['nombre']} — {c['horario']}")
-        st.progress(c["capacidad_actual"] / c["capacidad_max"])
-    
-        if st.button(f"Reservar {c['id']}"):
-            resultado = reserve_class_atomic(user_id, c["id"])
-            st.success(resultado)
-
-elif section == "Recomendaciones":
-    st.subheader("🤖 Entrenamiento Sugerido")
-    
-    rutina = suggest_routine(
+    st.subheader("🤖 Entrenamiento sugerido")
+    routine = suggest_routine(
         goal=perfil["objetivo"],
-        visits_last_30=len(visitas),
-        fav_hours=[18,19,20],
-        occupancy=55
+        visits_count=len(visitas),
+        preferred_time="Tarde",
+        occupancy=65,
     )
-    
-    st.write(f"🔥 Recomendación principal: **{rutina['top1']}**")
-    st.write(f"⭐ Alternativa: **{rutina['top2']}**")
-    
-    st.write("### Detalles sugeridos:")
-    for d in rutina["detalles"]:
-        st.write("- " + d)
+
+    for r in routine:
+        st.markdown(f"- {r}")
+
+elif menu == "📊 Ocupación":
+    st.title("📊 Ocupación actual")
+
+    zonas = {
+        "Cardio": 72,
+        "Pesas": 85,
+        "Funcional": 40,
+    }
+
+    cols = st.columns(3)
+    for col, (zona, percent) in zip(cols, zonas.items()):
+        with col:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            mini_gauge(percent, zona)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+elif menu == "📅 Clases":
+    st.title("📅 Clases disponibles")
+
+    clases = get_classes()
+
+    for c in clases:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader(c["nombre"])
+        st.write(f"🕒 {c['horario']}")
+        st.write(f"👥 {c['capacidad_actual']} / {c['capacidad_max']}")
+
+        if st.button(f"Reservar {c['nombre']}", key=c["id"]):
+            result = reserve_class_atomic(USER_ID, c["id"])
+            st.success(result)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif menu == "👤 Perfil":
+    st.title("👤 Mi perfil")
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.write(f"**Nombre:** {perfil['nombre']}")
+    st.write(f"**Email:** {perfil['email']}")
+    st.write(f"**Membresía:** {perfil['membresia']}")
+    st.write(f"**Objetivo:** {perfil['objetivo']}")
+    st.write(f"**Visitas acumuladas:** {len(visitas)}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
