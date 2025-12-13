@@ -180,7 +180,7 @@ elif section == "Clases":
             if st.button(f"Reservar {c['nombre']}", key=c["id"]):
                 msg = reserve_class_atomic(USER_ID, c["id"])
                 st.success(msg)
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.error("Clase llena")
 
