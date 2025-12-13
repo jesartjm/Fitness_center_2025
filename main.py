@@ -99,7 +99,7 @@ if menu == "🏠 Dashboard":
 
     with col2:
         st.markdown('<div class="card"><div class="kpi">'
-                    f'{perfil["membresia"]}</div><div class="small">Membresía</div></div>',
+                    f'{perfil.get("membresia", "No asignada")}</div><div class="small">Membresía</div></div>',
                     unsafe_allow_html=True)
 
     with col3:
